@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(VENDEDOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchases PurchaseOrder[]
+  sales     Sale[]
+}
+
+enum Role {
+  ADMIN
+  VENDEDOR
+}
+
+model Product {
+  id           String   @id @default(uuid())
+  name         String
+  sku          String   @unique
+  description  String?
+  currentStock Int      @default(0)
+  salePrice    Decimal  @db.Decimal(10, 2)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  purchases    PurchaseOrder[]
+  saleItems    SaleItem[]
+  inventoryMovements InventoryMovement[]
+}
+
+model PurchaseOrder {
+  id            String   @id @default(uuid())
+  productId     String
+  quantity      Int
+  costPrice     Decimal  @db.Decimal(10, 2)
+  salePrice     Decimal  @db.Decimal(10, 2)
+  totalCost     Decimal  @db.Decimal(10, 2)
+  supplier      String?
+  invoiceNumber String?
+  purchaseDate  DateTime
+  createdBy     String
+  createdAt     DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [createdBy], references: [id])
+}
+
+model Sale {
+  id          String   @id @default(uuid())
+  totalAmount Decimal  @db.Decimal(10, 2)
+  sellerId    String
+  sellerName  String
+  saleDate    DateTime
+  createdAt   DateTime @default(now())
+
+  items  SaleItem[]
+  seller User       @relation(fields: [sellerId], references: [id])
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String
+  productId String
+  productName String
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  subtotal  Decimal @db.Decimal(10, 2)
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model InventoryMovement {
+  id          String   @id @default(uuid())
+  productId   String
+  type        MovementType
+  quantity    Int
+  referenceId String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+}
+
+enum MovementType {
+  PURCHASE
+  SALE
+}
