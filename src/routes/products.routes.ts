@@ -11,12 +11,12 @@ import { adminOnly } from '../middlewares/role.middleware';
 
 const router = Router();
 
-// Todas las rutas requieren autenticación
-router.use(authMiddleware);
-
-// Obtener productos (ambos roles)
+// Obtener productos (público)
 router.get('/', getAllProducts);
 router.get('/:id', getProductById);
+
+// Todas las rutas siguientes requieren autenticación
+router.use(authMiddleware);
 
 // Crear, actualizar y eliminar productos (solo admin)
 router.post('/', adminOnly, createProduct);
