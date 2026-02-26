@@ -9,6 +9,9 @@ export const getAllProducts = async (req: AuthRequest, res: Response) => {
     const products = await prisma.product.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' },
+      include: {
+        category: true,
+      },
     });
 
     return res.json(products);
@@ -24,6 +27,9 @@ export const getProductById = async (req: AuthRequest, res: Response) => {
 
     const product = await prisma.product.findUnique({
       where: { id },
+      include: {
+        category: true,
+      },
     });
 
     if (!product) {
@@ -39,10 +45,10 @@ export const getProductById = async (req: AuthRequest, res: Response) => {
 
 export const createProduct = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, sku, description, salePrice }: CreateProductDTO = req.body;
+    const { name, sku, description, salePrice, categoryId }: CreateProductDTO = req.body;
 
-    if (!name || !sku || !salePrice) {
-      return res.status(400).json({ error: 'Nombre, SKU y precio de venta son requeridos' });
+    if (!name || !sku || !salePrice || !categoryId) {
+      return res.status(400).json({ error: 'Nombre, SKU, precio de venta y categoría son requeridos' });
     }
 
     const existingProduct = await prisma.product.findUnique({
@@ -53,13 +59,25 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Ya existe un producto con ese SKU' });
     }
 
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!category) {
+      return res.status(400).json({ error: 'La categoría no existe' });
+    }
+
     const product = await prisma.product.create({
       data: {
         name,
         sku,
         description,
         salePrice,
+        categoryId,
         currentStock: 0,
+      },
+      include: {
+        category: true,
       },
     });
 
@@ -73,7 +91,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
 export const updateProduct = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, salePrice } = req.body;
+    const { name, description, salePrice, categoryId } = req.body;
 
     const product = await prisma.product.findUnique({
       where: { id },
@@ -83,12 +101,26 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
+    if (categoryId) {
+      const category = await prisma.category.findUnique({
+        where: { id: categoryId },
+      });
+
+      if (!category) {
+        return res.status(400).json({ error: 'La categoría no existe' });
+      }
+    }
+
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
         name: name ?? product.name,
         description: description ?? product.description,
         salePrice: salePrice ?? product.salePrice,
+        categoryId: categoryId !== undefined ? categoryId : product.categoryId,
+      },
+      include: {
+        category: true,
       },
     });
 

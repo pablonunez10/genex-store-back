@@ -19,6 +19,7 @@ export interface CreateProductDTO {
   sku: string;
   description?: string;
   salePrice: number;
+  categoryId: string;
 }
 
 export interface CreatePurchaseDTO {
@@ -38,4 +39,14 @@ export interface CreateSaleDTO {
 export interface SaleItemDTO {
   productId: string;
   quantity: number;
+}
+
+export interface CreateCategoryDTO {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateCategoryDTO {
+  name?: string;
+  description?: string;
 }
