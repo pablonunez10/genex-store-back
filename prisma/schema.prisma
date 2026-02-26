@@ -25,6 +25,17 @@ enum Role {
   VENDEDOR
 }
 
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+}
+
 model Product {
   id           String   @id @default(uuid())
   name         String
@@ -33,9 +44,11 @@ model Product {
   currentStock Int      @default(0)
   salePrice    Decimal  @db.Decimal(10, 2)
   isActive     Boolean  @default(true)
+  categoryId   String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  category   Category @relation(fields: [categoryId], references: [id])
   purchases    PurchaseOrder[]
   saleItems    SaleItem[]
   inventoryMovements InventoryMovement[]
