@@ -110,6 +110,41 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       }
     }
 
+    // Verificar si hay cambio de stock para registrar movimiento
+    const stockChanged = currentStock !== undefined && currentStock !== product.currentStock;
+    const stockDifference = stockChanged ? currentStock - product.currentStock : 0;
+
+    if (stockChanged) {
+      // Usar transacción para actualizar producto y registrar movimiento
+      const [updatedProduct] = await prisma.$transaction([
+        prisma.product.update({
+          where: { id },
+          data: {
+            name: name ?? product.name,
+            description: description ?? product.description,
+            salePrice: salePrice ?? product.salePrice,
+            categoryId: categoryId !== undefined ? categoryId : product.categoryId,
+            currentStock: currentStock,
+            isActive: isActive !== undefined ? isActive : product.isActive,
+          },
+          include: {
+            category: true,
+          },
+        }),
+        prisma.inventoryMovement.create({
+          data: {
+            productId: id,
+            type: 'ADJUSTMENT',
+            quantity: stockDifference,
+            referenceId: id,
+            userId: req.user!.id,
+          },
+        }),
+      ]);
+
+      return res.json(updatedProduct);
+    }
+
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
@@ -117,7 +152,6 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
         description: description ?? product.description,
         salePrice: salePrice ?? product.salePrice,
         categoryId: categoryId !== undefined ? categoryId : product.categoryId,
-        currentStock: currentStock !== undefined ? currentStock : product.currentStock,
         isActive: isActive !== undefined ? isActive : product.isActive,
       },
       include: {
