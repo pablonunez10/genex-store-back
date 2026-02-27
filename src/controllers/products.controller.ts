@@ -7,7 +7,6 @@ const prisma = new PrismaClient();
 export const getAllProducts = async (req: AuthRequest, res: Response) => {
   try {
     const products = await prisma.product.findMany({
-      where: { isActive: true },
       orderBy: { createdAt: 'desc' },
       include: {
         category: true,
@@ -91,7 +90,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
 export const updateProduct = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, salePrice, categoryId } = req.body;
+    const { name, description, salePrice, categoryId, currentStock, isActive } = req.body;
 
     const product = await prisma.product.findUnique({
       where: { id },
@@ -118,6 +117,8 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
         description: description ?? product.description,
         salePrice: salePrice ?? product.salePrice,
         categoryId: categoryId !== undefined ? categoryId : product.categoryId,
+        currentStock: currentStock !== undefined ? currentStock : product.currentStock,
+        isActive: isActive !== undefined ? isActive : product.isActive,
       },
       include: {
         category: true,
