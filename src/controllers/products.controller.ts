@@ -110,9 +110,12 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       }
     }
 
+    // Convertir currentStock a número si viene definido
+    const parsedStock = currentStock !== undefined ? Number(currentStock) : undefined;
+
     // Verificar si hay cambio de stock para registrar movimiento
-    const stockChanged = currentStock !== undefined && currentStock !== product.currentStock;
-    const stockDifference = stockChanged ? currentStock - product.currentStock : 0;
+    const stockChanged = parsedStock !== undefined && parsedStock !== product.currentStock;
+    const stockDifference = stockChanged ? parsedStock - product.currentStock : 0;
 
     if (stockChanged) {
       // Usar transacción para actualizar producto y registrar movimiento
@@ -124,7 +127,7 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
             description: description ?? product.description,
             salePrice: salePrice ?? product.salePrice,
             categoryId: categoryId !== undefined ? categoryId : product.categoryId,
-            currentStock: currentStock,
+            currentStock: parsedStock,
             isActive: isActive !== undefined ? isActive : product.isActive,
           },
           include: {
